@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rister Form</title>
+</head>
+
+<body>
+    <h1>Race Registration!</h1>
+    <form action="/race">
+        <label for="firstname">First Name</label>
+        <input type="text" id="firstname" name="firstname" required>
+        <label for="lastname">Last Name</label>
+        <input type="text" id="lastname" name="lastname" required>
+        <h2>Select a Race</h2>
+        <div>
+            <input type="radio" id="fun" name="Race" value="fun">
+            <label for="fun">Fun Run 5K</label>
+        </div>
+        <div>
+            <input type="radio" id="half" name="Race" value="half">
+            <label for="half">Half Marathon</label>
+        </div>
+        <div>
+            <input type="radio" id="full" name="Race" value="full">
+            <label for="full">Full Marathon</label>
+        </div>
+        <div>
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required>
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <div>
+            <label for="age">Select Age Group</label>
+            <select name="age" id="age">
+                <option value="18">Under 18</option>
+                <option value="30">19 ~ 50</option>
+                <option value="50">50+</option>
+            </select>
+        </div>
+        <button>Register!</button>
+    </form>
+</body>
+
+</html>
