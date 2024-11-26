@@ -1,0 +1,17 @@
+h1 {
+    text-align: center;
+    font-weight: 400;
+    text-decoration: #3f8a43 underline wavy;
+    letter-spacing: 15px;
+    font-size: 80px;
+    /* font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; */
+    font-family: fantasy;
+}
+
+a {
+    text-decoration: none;
+}
+
+p {
+    line-height: 2;
+}
