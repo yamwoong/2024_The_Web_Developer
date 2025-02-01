@@ -3,6 +3,7 @@ const app = express();
 // npm i morgan => http 요청 로그를 기록하는 미들웨어
 const morgan = require('morgan');
 
+const AppError = require('./AppError');
 
 
 app.use(morgan('tiny'));
@@ -24,8 +25,9 @@ const verifyPassword = ((req, res, next) => {
     if(password === 'chickennugget'){
         return next();
     }
+    throw new AppError('password required', 401);
     // res.send('SORRY YOU NEED A PASSWOARD')
-    throw new Error('Password required!')
+    // throw new AppError(401, 'Password required!')
 })
 
 app.get('/', (req, res) => {
@@ -46,16 +48,28 @@ app.get('/secret', verifyPassword, (req, res) => {
     res.send('secret');
 })
 
+app.get('/admin', (req, res) => {
+    throw new AppError('You are not an Admin!', 403);
+})
+
 //404처리
 app.use((req, res) => {
     res.status(404).send('NOT FOUND');
 })
 
+// app.use((err, req, res, next) => {
+//     console.log('******************************');
+//     console.log('******************************');
+//     console.log('******************************');
+//     console.log(err);
+//     next(err);
+// })
+
 app.use((err, req, res, next) => {
-    console.log('******************************');
-    console.log('******************************');
-    console.log('******************************');
+    const {status = 500, messeage = 'Somthing Went Wrong'} = err;
+    res.status(status).send(messeage);
 })
+
 
 app.listen(3000, () => {
     console.log('All is running on loacalhost:3000');
