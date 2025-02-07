@@ -3,13 +3,12 @@ const app = express();
 const path = require('path');
 const mongoose = require('mongoose');
 const ejsMate = require('ejs-mate');
-const Joi = require('joi');
-const {campgroundSchema} = require('./schemas');
+const {campgroundSchema, reviewSchena} = require('./schemas');
 const catchAsync = require('./utils/catchAsync');
 const ExpressError = require('./utils/ExpressError');
 const methodOverride = require('method-override');
 const Campground = require('./models/campground');
-const { ppid } = require('process');
+const Review = require('./models/review');
 
 mongoose.connect('mongodb://127.0.0.1:27017/yelp-camp');
 
@@ -34,6 +33,18 @@ app.use(methodOverride('_method'));
 const validateCampground = (req, res, next) => {
     
     const {error} = campgroundSchema.validate(req.body);
+    if(error){
+        const msg = error.details.map(el => el.message).join(',');
+        throw new ExpressError(msg, 400);
+    } else {
+        next();
+    }
+}
+
+// map() : 기존 배열을 변경하지 않고 새로운 배열을 반환
+// map() 사용이유 : 불변성 / 상태관리가 쉬워짐 / 안전함 => 배열을 변경하는 순간 나중에 큰 문제를 일으킬 수 있음 / map을 사용해서 새로운 배열을 만드는 습관을 들이는게 좋음
+const validateReview = (req, res, next) => {
+    const {error} = reviewSchena.validate(req.body);
     if(error){
         const msg = error.details.map(el => el.message).join(',');
         throw new ExpressError(msg, 400);
@@ -67,7 +78,7 @@ app.post('/campgrounds', validateCampground, catchAsync(async(req, res, next) =>
 }))
 
 app.get('/campgrounds/:id', catchAsync(async (req, res) => {
-    const campground = await Campground.findById(req.params.id);
+    const campground = await Campground.findById(req.params.id).populate('reviews');
     res.render('campgrounds/show', {campground});
 }))
 
@@ -88,6 +99,22 @@ app.delete('/campgrounds/:id', catchAsync(async(req, res, next) => {
         const {id} = req.params;
         await Campground.findByIdAndDelete(id);
         res.redirect('/campgrounds');
+}))
+
+app.post('/campgrounds/:id/reviews', validateReview, catchAsync(async(req, res) => {
+    const campground = await Campground.findById(req.params.id);
+    const review = new Review(req.body.review)
+    campground.reviews.push(review);
+    await review.save();
+    await campground.save();
+    res.redirect(`/campgrounds/${campground._id}`);
+}))
+
+app.delete('/campgrounds/:id/reviews/:reviewId', catchAsync(async(req, res) => {
+    const {id, reviewId} = req.params;
+    await Campground.findByIdAndUpdate(id, {$pull : {reviews : reviewId}});
+    await Review.findByIdAndDelete(reviewId);
+    res.redirect(`/campgrounds/${id}`);
 }))
 
 //놓는 위치가 중요 위에두면 다 이 로직으로 처리됨
