@@ -1,78 +1,38 @@
 const express = require('express');
 const router = express.Router();
+const campgrounds = require('../controlle/campgrounds');
 const catchAsync = require('../utils/catchAsync');
-const {campgroundSchema} = require('../schemas');
-const {isLoggedIn} = require('../middleware');
+const {isLoggedIn, isAuthor, validateCampground} = require('../middleware');
 
-const ExpressError = require('../utils/ExpressError');
+const multer = require('multer');
+const upload = multer({dest : 'uploads/'})
+
 const Campground = require('../models/campground');
 
-router.get('/', catchAsync(async (req, res) => {
-    const campgrounds = await Campground.find({});
-    res.render('campgrounds/index', {campgrounds});
-}))
-
-const validateCampground = (req, res, next) => {
-    
-    const {error} = campgroundSchema.validate(req.body);
-    if(error){
-        const msg = error.details.map(el => el.message).join(',');
-        throw new ExpressError(msg, 400);
-    } else {
-        next();
-    }
-}
-
+router.route('/')
+    .get(catchAsync(campgrounds.index))
+    // .post(isLoggedIn, validateCampground, catchAsync(campgrounds.createCampground));
+    .post(upload.array('image'), (req, res) => {
+        // res.send(req.body, req.file); <- 이런식으로 보내면 안됨
+        // 객체를 사용해서 보내야함
+        // res.send({
+        //     body: req.body,
+        //     file: req.file
+        // });
+        console.log(req.body, req.files);
+        res.send('IT WORKED?');
+    })
 
 //Express에서는 라우트를 위에서 아래로 차례대로 매칭하기 때문에, 
 ///campgrounds/new와 같은 고정된 경로는 /campgrounds/:id와 같은 동적 경로보다 먼저 정의되어야 합니다.
+router.get('/new', isLoggedIn, campgrounds.renderNewForm);
 
-router.get('/new', isLoggedIn, (req, res) => {
-    res.render('campgrounds/new');
-}) 
-
-// 이대로는 req.body 파싱이 안됨 미들웨어를 사용해야함
-router.post('/', isLoggedIn, validateCampground, catchAsync(async(req, res, next) => {
-    // if(!req.body.campground) throw new ExpressError('Invalid Campground Data', 400);
-    const campground = new Campground(req.body.campground);
-    await campground.save();
-    req.flash('success', 'Successfully made a new campground');
-    res.redirect(`/campgrounds/${campground._id}`);
-}))
-
-router.get('/:id', catchAsync(async (req, res) => {
-    const campground = await Campground.findById(req.params.id).populate('reviews');
-    if(!campground){
-        req.flash('error', 'Cannot find that campground!');
-        return res.redirect('/campgrounds');
-    }
-    res.render('campgrounds/show', {campground});
-}))
-
-router.get('/:id/edit', isLoggedIn, catchAsync(async(req, res) => {
-    const campground = await Campground.findById(req.params.id);
-    if(!campground){
-        req.flash('error', 'Cannot find that campground!');
-        return res.redirect('/campgrounds');
-    }
-    res.render('campgrounds/edit', {campground});
-}))
+router.route('/:id')
+    .get(catchAsync(campgrounds.showCampground))
+    .put(isLoggedIn, isAuthor, validateCampground, catchAsync(campgrounds.updateCampground))
+    .delete(isLoggedIn, isAuthor, catchAsync(campgrounds.deleteCampground));
 
 
-// ... <= 스프레드 연산자
-router.put('/:id', isLoggedIn, validateCampground, catchAsync(async(req, res, next) => {
-        const { id } = req.params;
-        const campground = await Campground.findByIdAndUpdate(id, {...req.body.campground});
-        req.flash('success', 'Successfully updated campground');
-        res.redirect(`/campgrounds/${campground._id}`);
-}))
-
-router.delete('/:id', isLoggedIn, catchAsync(async(req, res, next) => {
-        const {id} = req.params;
-        await Campground.findByIdAndDelete(id);
-    req.flash('success', 'Successfully deleted campground');
-
-        res.redirect('/campgrounds');
-}))
+router.get('/:id/edit', isLoggedIn, isAuthor, catchAsync(campgrounds.renderEditFrom));
 
 module.exports = router;
