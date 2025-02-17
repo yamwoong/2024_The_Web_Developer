@@ -5,23 +5,24 @@ const catchAsync = require('../utils/catchAsync');
 const {isLoggedIn, isAuthor, validateCampground} = require('../middleware');
 
 const multer = require('multer');
-const upload = multer({dest : 'uploads/'})
+const {storage} = require('../cloudinary');
+const upload = multer({storage});
 
 const Campground = require('../models/campground');
 
 router.route('/')
     .get(catchAsync(campgrounds.index))
-    // .post(isLoggedIn, validateCampground, catchAsync(campgrounds.createCampground));
-    .post(upload.array('image'), (req, res) => {
-        // res.send(req.body, req.file); <- 이런식으로 보내면 안됨
-        // 객체를 사용해서 보내야함
-        // res.send({
-        //     body: req.body,
-        //     file: req.file
-        // });
-        console.log(req.body, req.files);
-        res.send('IT WORKED?');
-    })
+    .post(isLoggedIn, upload.array('image'), validateCampground, catchAsync(campgrounds.createCampground));
+    // .post(upload.array('image'), (req, res) => {
+    //     // res.send(req.body, req.file); <- 이런식으로 보내면 안됨
+    //     // 객체를 사용해서 보내야함
+    //     // res.send({
+    //     //     body: req.body,
+    //     //     file: req.file
+    //     // });
+    //     console.log(req.body, req.files);
+    //     res.send('IT WORKED?');
+    // })
 
 //Express에서는 라우트를 위에서 아래로 차례대로 매칭하기 때문에, 
 ///campgrounds/new와 같은 고정된 경로는 /campgrounds/:id와 같은 동적 경로보다 먼저 정의되어야 합니다.

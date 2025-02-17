@@ -21,6 +21,7 @@ module.exports.storeReturnTo = (req, res, next) => {
     next();
 }
 
+// 데이터가 유효한지 검증하는 미들웨어
 module.exports.validateCampground = (req, res, next) => {
     
     const {error} = campgroundSchema.validate(req.body);
