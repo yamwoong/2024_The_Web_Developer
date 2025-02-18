@@ -28,9 +28,15 @@ router.route('/')
 ///campgrounds/new와 같은 고정된 경로는 /campgrounds/:id와 같은 동적 경로보다 먼저 정의되어야 합니다.
 router.get('/new', isLoggedIn, campgrounds.renderNewForm);
 
+
+// isLoggedIn => 로그인 했는지 확인
+// isAuthor => 작성자인지 확인
+// validateCampground =>
+// upload.array('image') 에서 html id / name 값과 ('') 안에 값이 매치해야한다 그래야 multer에서 이미지를 찾음 
+
 router.route('/:id')
     .get(catchAsync(campgrounds.showCampground))
-    .put(isLoggedIn, isAuthor, validateCampground, catchAsync(campgrounds.updateCampground))
+    .put(isLoggedIn, isAuthor, upload.array('image'), validateCampground, catchAsync(campgrounds.updateCampground))
     .delete(isLoggedIn, isAuthor, catchAsync(campgrounds.deleteCampground));
 
 

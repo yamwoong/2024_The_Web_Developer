@@ -1,5 +1,5 @@
 const Campground = require('../models/campground');
-
+const {cloudinary} = require('../cloudinary');
 
 module.exports.index = async (req, res) => {
     const campgrounds = await Campground.find({});
@@ -18,9 +18,6 @@ module.exports.createCampground = async(req, res, next) => {
     campground.images = req.files.map(f => ({ url: f.path, filename: f.filename }));
     campground.author = req.user._id;
     await campground.save();
-    console.log(campground.images);
-    console.log(req.files);
-    console.log(campground);
     req.flash('success', 'Successfully made a new campground');
     res.redirect(`/campgrounds/${campground._id}`);
 }
@@ -55,7 +52,22 @@ module.exports.renderEditFrom = async(req, res) => {
 // ... <= 스프레드 연산자
 module.exports.updateCampground = async(req, res, next) => {
         const { id } = req.params;
+        console.log(req.body);
         const campground = await Campground.findByIdAndUpdate(id, {...req.body.campground});
+        const imgs = req.files.map(f => ({ url: f.path, filename: f.filename }));
+        // 모든 이미지를 덮어쓰는게 아니여서 map이 아니라 push를 쓴다
+        // 기존 데이터를 유지하면서 새 데이터 추가하기 위해 push
+        campground.images.push(...imgs);
+        await campground.save();
+
+        if(req.body.deleteImages) {
+            for(let filename of req.body.deleteImages) {
+                // 실제 cloudinary에 저장하는 사진 파일까지 삭제하는 코드
+                await cloudinary.uploader.destroy(filename);
+            }
+            await campground.updateOne({ $pull: { images: { filename: { $in: req.body.deleteImages } } } });
+        }
+
         req.flash('success', 'Successfully updated campground');
         res.redirect(`/campgrounds/${campground._id}`);
 }
